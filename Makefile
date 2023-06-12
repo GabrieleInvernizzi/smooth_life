@@ -22,7 +22,7 @@ OBJ := $(patsubst %.c,%.o,$(SRC:$(SRC_DIR)/%=$(OBJ_DIR)/%))
 default: makedir all
 
 $(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -l$(SYSLIBS) -o $@ $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $(OBJ) -l$(SYSLIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -I$(INCLUDE_DIR) -c -o $@ $<

@@ -44,7 +44,7 @@ void trenderer_deinit(void) {
 
 void trenderer_render(float* frame) {
     // Clear the screen TODO: make it a bit more crossplatform.
-    fputs("\033[2J\033[1; 1H", stdout);
+    fputs("\033[2J\033[H", stdout);
     // Create frame
     for (unsigned int i = 0; i < trenderer.height; i++) {
         for (unsigned int j = 0; j < trenderer.width; j++) {
@@ -54,4 +54,5 @@ void trenderer_render(float* frame) {
     }
     // Print frame
     fwrite(trenderer.buffer, sizeof(char), trenderer.buf_len, stdout);
+    //putc('\n', stdout);
 }
