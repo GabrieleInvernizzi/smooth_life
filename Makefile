@@ -18,7 +18,7 @@ TARGET := $(BIN_DIR)/$(TARGET_NAME)
 
 #SRC := $(wildcard $(SRC_DIR)/*.c)
 
-SRC := main.c
+SRC := main.c smooth_life.c
 ifeq ($(ncurses),true)
 	LIBS += -lncurses
 	SRC += ncurses_renderer.c
