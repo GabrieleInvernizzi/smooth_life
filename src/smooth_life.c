@@ -125,7 +125,7 @@ void state_step(SMState* s) {
             calculate_nm(s, &n, &m, ci, cj);
             float dstate = 2 * transition_fn(s, n, m) - 1;
             s->state[cj + s->width*ci] += s->dt * dstate;
-            clamp(&s->state[cj + s->width*ci], 0.0f, 1.0f); 
+            clamp(&s->state[cj + s->width*ci], 0.0f, 1.0f);
         }
     }
 }

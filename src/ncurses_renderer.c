@@ -30,24 +30,24 @@ int trenderer_init(unsigned int width, unsigned int height) {
     trenderer.width = width;
     trenderer.height = height;
 
-    trenderer.x = (mcols - width) / 2;
-    trenderer.y = (mrows - height) / 2;
+    trenderer.x = (mcols - width) / 2 + 1;
+    trenderer.y = (mrows - height) / 2 + 1;
     unsigned int x = trenderer.x - 1;
     unsigned int y = trenderer.y - 1;
     clear();
     // Make the frame
     for (size_t i = x; i < width + x; i++) {
         mvaddch(y, i, '-');
-        mvaddch(y + height + 1, i, '-');
+        mvaddch(y + height, i, '-');
     }
     for (size_t i = y; i < height + y; i++) {
         mvaddch(i, x, '|');
-        mvaddch(i, x + width + 1, '|');
+        mvaddch(i, x + width, '|');
     }
     mvaddch(y, x, '+');
-    mvaddch(y + height + 1, x, '+');
-    mvaddch(y, x + width + 1, '+');
-    mvaddch(y + height + 1, x + width + 1, '+');
+    mvaddch(y + height, x, '+');
+    mvaddch(y, x + width, '+');
+    mvaddch(y + height, x + width, '+');
 
     return 0;
 }
@@ -59,8 +59,8 @@ void trenderer_deinit(void) {
 
 
 void trenderer_render(float* frame) {
-    for (size_t i = trenderer.y; i < trenderer.height + trenderer.y; i++) {
-        for (size_t j = trenderer.x; j < trenderer.width + trenderer.x; j++) {
+    for (size_t i = trenderer.y; i < trenderer.height + trenderer.y - 1; i++) {
+        for (size_t j = trenderer.x; j < trenderer.width + trenderer.x - 1; j++) {
             unsigned int level = (unsigned int)((frame[j + trenderer.width*i] * N_LEVELS));
             char c = LEVELS[level < N_LEVELS ? level : (N_LEVELS - (unsigned int)1)];
             mvaddch(i, j, c);
