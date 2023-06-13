@@ -5,8 +5,8 @@
 #include <math.h>
 #include <time.h>
 
-#define WIDTH (100)
-#define HEIGHT (40)
+#define WIDTH (180)
+#define HEIGHT (46)
 
 
 typedef struct {
@@ -18,7 +18,7 @@ static Config conf = {
     .b1 = .278f, .d1 = .267f, 
     .b2 = .365f, .d2 = .445f,
     .alpha_m = .147f, .alpha_n = .028f,
-    .dt = .005f
+    .dt = .05f
 };
 static float* state;
 
@@ -31,10 +31,10 @@ void state_init(void) {
 
     state = calloc(WIDTH * HEIGHT, sizeof(float));
 
-    unsigned int w = WIDTH * 0.7;
-    unsigned int h = HEIGHT * 0.7;
-    for (unsigned int di = 0; di < h; di++) {
-        for (unsigned int dj = 0; dj < w; dj++) {
+    unsigned int w = WIDTH * 0.4;
+    unsigned int h = HEIGHT * 0.4;
+    for (size_t di = 0; di < h; di++) {
+        for (size_t dj = 0; dj < w; dj++) {
             unsigned int j = dj + WIDTH / 2 - w / 2;
             unsigned int i = di + HEIGHT / 2 - h / 2;
             state[j + WIDTH*i] = rand_float();
@@ -103,8 +103,8 @@ void calculate_nm(float* n_res, float* m_res, unsigned int ci, unsigned int cj) 
 
 void state_step(void) {
     float n, m;
-    for (unsigned int ci = 0; ci < HEIGHT; ci++) {
-        for (unsigned int cj = 0; cj < WIDTH; cj++) {
+    for (size_t ci = 0; ci < HEIGHT; ci++) {
+        for (size_t cj = 0; cj < WIDTH; cj++) {
             calculate_nm(&n, &m, ci, cj);
             float dstate = 2 * transition_fn(n, m) - 1;
             state[cj + WIDTH*ci] += conf.dt * dstate;
@@ -116,7 +116,10 @@ void state_step(void) {
 
 int main(const int argc, const char** argv) {
     state_init();
-    trenderer_init(WIDTH, HEIGHT);
+    if (trenderer_init(WIDTH, HEIGHT)) {
+        state_deinit();
+        return 1;
+    }
 
     while(1) {
         state_step();

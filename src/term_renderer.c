@@ -25,13 +25,15 @@ static inline char trenderer_get_buf_at(unsigned int i, unsigned int j) {
     return trenderer.buffer[j + i * (trenderer.width + 1)];
 }
 
-void trenderer_init(unsigned int width, unsigned int height) {
+int trenderer_init(unsigned int width, unsigned int height) {
     trenderer.width = width;
     trenderer.height = height;
     trenderer.buf_len = (width + 1) * height;
     trenderer.buffer = malloc(trenderer.buf_len * sizeof(char));
-    for (unsigned int i = 0; i < height; i++)
+    if (!trenderer.buffer) return 1;
+    for (size_t i = 0; i < height; i++)
         trenderer_set_buf_at(i, width, '\n');
+    return 0;
 }
 
 void trenderer_deinit(void) {
@@ -46,13 +48,12 @@ void trenderer_render(float* frame) {
     // Clear the screen TODO: make it a bit more crossplatform.
     fputs("\033[2J\033[H", stdout);
     // Create frame
-    for (unsigned int i = 0; i < trenderer.height; i++) {
-        for (unsigned int j = 0; j < trenderer.width; j++) {
+    for (size_t i = 0; i < trenderer.height; i++) {
+        for (size_t j = 0; j < trenderer.width; j++) {
             unsigned int level = (unsigned int)((frame[j + trenderer.width*i] * N_LEVELS));
             trenderer_set_buf_at(i, j, LEVELS[level < N_LEVELS ? level : (N_LEVELS - (unsigned int)1)]);
         }
     }
     // Print frame
     fwrite(trenderer.buffer, sizeof(char), trenderer.buf_len, stdout);
-    //putc('\n', stdout);
 }

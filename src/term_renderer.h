@@ -1,7 +1,7 @@
 #pragma once
 
 // Width and height of each frame.
-void trenderer_init(unsigned int width, unsigned int height);
+int trenderer_init(unsigned int width, unsigned int height);
 // Deinit trenderer.
 void trenderer_deinit(void);
 // Renders a frame onto the terminal.
