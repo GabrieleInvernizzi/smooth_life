@@ -1,13 +1,17 @@
 #include <stdlib.h>
 #include <time.h>
+#include <stdio.h>
 
 #include "smooth_life.h"
 #include "tui.h"
 
+#define CLOCK_IN_SECS() ((double)clock() / (double)CLOCKS_PER_SEC)
+
 
 int main(const int argc, const char** argv) {
+    // Set random seed.
     srand(time(0));
-
+    const unsigned int max_fps = 30;
     SMConfig conf = {
         .width = 180, .height = 46,
         .init_percent_x = 0.4, .init_percent_y = 0.4,
@@ -26,6 +30,11 @@ int main(const int argc, const char** argv) {
         return 1;
     }
 
+    // Setup timers
+    double current_time = CLOCK_IN_SECS();
+    double deltatime = 0;
+    double fps = 0.0;
+
     int is_running = 1;
     while(is_running) {
         TUIEvent e = tui_get_event();
@@ -35,8 +44,15 @@ int main(const int argc, const char** argv) {
             s = sm_init(&conf);
         }
 
-        state_step(s);
-        tui_render(sm_get_raw_state(s));
+        deltatime = CLOCK_IN_SECS() - current_time;
+
+        if (deltatime > 1.0 / max_fps) {
+            current_time = CLOCK_IN_SECS();
+            fps = 1.0 / deltatime;
+            
+            state_step(s);
+            tui_render(sm_get_raw_state(s));
+        }
     }
 
     tui_deinit();
