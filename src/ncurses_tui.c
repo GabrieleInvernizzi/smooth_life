@@ -1,7 +1,6 @@
-#include "term_renderer.h"
+#include "tui.h"
 
 #include <ncurses.h>
-
 
 // Define brightness levels.
 static const char LEVELS[] = " .,:-=+*#%@";
@@ -10,37 +9,40 @@ static const unsigned char N_LEVELS = sizeof(LEVELS) / sizeof(char) - 1;
 typedef struct {
     unsigned int width, height;
     unsigned int x, y;
-} TRenderer;
+    TUIEvent last_event;
+} TUI;
 
-static TRenderer trenderer = { 0 };
+static TUI tui = { 0 };
 
-int trenderer_init(unsigned int width, unsigned int height) {
+int tui_init(unsigned int width, unsigned int height) {
     unsigned int mrows, mcols;
     initscr();
     cbreak();
     noecho();
     curs_set(0);
+    nodelay(stdscr, TRUE);
     getmaxyx(stdscr, mrows, mcols);
     if (mrows < (height + 1) || mcols < (width + 1)) {
+        tui_deinit();
         fprintf(stderr, "Error. The width or height specified: \"%u, %u\" are greater than the terminal dimensions: \"%u, %u\".\n",
             width, height, mcols, mrows);
-            trenderer_deinit();
         return 1;
     }
-    trenderer.width = width;
-    trenderer.height = height;
+    tui.last_event = TUI_NO_EVENT;
+    tui.width = width;
+    tui.height = height;
 
-    trenderer.x = (mcols - width) / 2 + 1;
-    trenderer.y = (mrows - height) / 2 + 1;
-    unsigned int x = trenderer.x - 1;
-    unsigned int y = trenderer.y - 1;
+    tui.x = (mcols - width) / 2;
+    tui.y = (mrows - height) / 2;
+    unsigned int x = tui.x - 1;
+    unsigned int y = tui.y - 1;
     clear();
     // Make the frame
-    for (size_t i = x; i < width + x; i++) {
+    for (size_t i = x + 1; i < width + x; i++) {
         mvaddch(y, i, '-');
         mvaddch(y + height, i, '-');
     }
-    for (size_t i = y; i < height + y; i++) {
+    for (size_t i = y + 1; i < height + y; i++) {
         mvaddch(i, x, '|');
         mvaddch(i, x + width, '|');
     }
@@ -53,18 +55,33 @@ int trenderer_init(unsigned int width, unsigned int height) {
 }
 
 
-void trenderer_deinit(void) {
+void tui_deinit(void) {
     endwin();
 }
 
 
-void trenderer_render(float* frame) {
-    for (size_t i = trenderer.y; i < trenderer.height + trenderer.y - 1; i++) {
-        for (size_t j = trenderer.x; j < trenderer.width + trenderer.x - 1; j++) {
-            unsigned int level = (unsigned int)((frame[j + trenderer.width*i] * N_LEVELS));
+void tui_render(float* frame) {
+    // Check keyboard
+    int input = getch();
+    switch (input) {
+        case 'r': tui.last_event = TUI_RESTART_EVENT; break;
+        case 'q': tui.last_event = TUI_QUIT_EVENT; break;
+        default: break;
+    }
+
+    // Render
+    for (size_t i = tui.y; i < tui.height + tui.y - 1; i++) {
+        for (size_t j = tui.x; j < tui.width + tui.x - 1; j++) {
+            unsigned int level = (unsigned int)((frame[j + tui.width*i] * N_LEVELS));
             char c = LEVELS[level < N_LEVELS ? level : (N_LEVELS - (unsigned int)1)];
             mvaddch(i, j, c);
         }
     }
     refresh();
+}
+
+TUIEvent tui_get_event(void) {
+    TUIEvent e = tui.last_event;
+    tui.last_event = TUI_NO_EVENT;
+    return e;
 }
