@@ -7,7 +7,7 @@ INCLUDE_DIR := src
 LIBS := -lm -lncurses
 # Compilation config
 CC := gcc
-CFLAGS := -Wall -Wextra -std=c17 -pthread
+CFLAGS := -Wall -Wextra -std=c17 -pthread -fopenmp
 ifeq ($(debug),true)
 	CFLAGS += -O0 -g
 else

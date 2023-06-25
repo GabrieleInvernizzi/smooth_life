@@ -8,7 +8,8 @@
 // Configuration struct and enum
 typedef enum {
     SM_SINGLETHREADED,
-    SM_THREAD_POOL
+    SM_THREAD_POOL,
+    SM_OMP
 } SMConfigExecutionPolicy;
 
 typedef struct {

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <omp.h>
+
 #include <stdio.h>      // temp
 
 #include "thread_pool.h"
@@ -33,6 +35,7 @@ struct SMState {
 // State step functions
 static void state_step_nothreads(SMState* s);
 static void state_step_tp(SMState* s);
+static void state_step_omp(SMState* s);
 
 
 
@@ -98,10 +101,11 @@ static void state_step_nothreads(SMState* s) {
     float n, m;
     for (size_t ci = 0; ci < s->height; ci++) {
         for (size_t cj = 0; cj < s->width; cj++) {
+            size_t index = cj + s->width*ci;
             calculate_nm(s, &n, &m, ci, cj);
             float dstate = 2 * transition_fn(s, n, m) - 1;
-            s->state[cj + s->width*ci] += s->dt * dstate;
-            clamp(&s->state[cj + s->width*ci], 0.0f, 1.0f);
+            s->state[index] += s->dt * dstate;
+            clamp(&s->state[index], 0.0f, 1.0f);
         }
     }
 }
@@ -142,6 +146,26 @@ static void state_step_tp(SMState* s) {
 }
 
 
+static void state_step_omp(SMState* s) {
+    size_t i, ci, cj;
+    float n, m;
+    const size_t n_elements = s->width * s->height;
+
+    #pragma omp parallel for private(i, ci, cj)
+    for (i = 0; i < n_elements; i++) {
+        ci = i / s->width;
+        cj = i % s->width;
+        calculate_nm(s, &n, &m, ci, cj);
+        float dstate = 2 * transition_fn(s, n, m) - 1;
+        s->state_out[i] = s->state[i] + s->dt * dstate;
+
+        clamp(&s->state_out[i], 0.0f, 1.0f);
+    }
+
+    state_swap(s);
+}
+
+
 SMState* sm_init(SMConfig* conf) {
     SMState* s = malloc(sizeof(SMState));
     if (!s) return NULL;
@@ -156,6 +180,10 @@ SMState* sm_init(SMConfig* conf) {
     s->alpha_m   = conf->alpha_m;
     s->alpha_n   = conf->alpha_n;
     s->dt        = conf->dt;
+
+    s->state_out = NULL;
+    s->tp        = NULL;
+    s->tasks     = NULL;
 
     s->state = calloc(conf->width * conf->height, sizeof(float));
     if (!s->state) {
@@ -179,6 +207,18 @@ SMState* sm_init(SMConfig* conf) {
     case SM_SINGLETHREADED:
         s->state_step_fn = state_step_nothreads;
         s->n_threads = 1;
+        break;
+    
+    case SM_OMP:
+        s->state_step_fn = state_step_omp;
+        s->n_threads = conf->n_threads != 0 ? conf->n_threads : SM_DEFAULT_N_THREADS;
+        omp_set_num_threads(s->n_threads);
+
+        s->state_out = calloc(conf->width * conf->height, sizeof(float));
+        if (!s->state_out) {
+            sm_deinit(s);
+            return NULL;
+        }
         break;
     
     case SM_THREAD_POOL:
