@@ -246,10 +246,7 @@ SMState* sm_init(SMConfig* conf) {
             return NULL;
         }
         // Init tasks
-        bool add_one = false;
         size_t elems_per_thread = (s->width * s->height) / s->n_threads;
-        if ((s->width * s->height) % s->n_threads)
-            add_one = true;
 
         for (size_t i = 0; i < s->n_threads; i++) {
             size_t index_min = i * elems_per_thread;
@@ -257,6 +254,8 @@ SMState* sm_init(SMConfig* conf) {
             s->tasks[i].i_min = index_min;
             s->tasks[i].i_max = index_min + elems_per_thread - 1;
         }
+        if ((s->width * s->height) % s->n_threads)
+            s->tasks[s->n_threads - 1].i_max++;
 
         break;
     }
