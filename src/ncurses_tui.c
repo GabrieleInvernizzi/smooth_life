@@ -16,7 +16,7 @@ static TUI tui = { 0 };
 
 int tui_init(unsigned int width, unsigned int height) {
     unsigned int mrows, mcols;
-    initscr();
+    if (initscr() == NULL) return -1;
     cbreak();
     noecho();
     curs_set(0);
@@ -26,7 +26,7 @@ int tui_init(unsigned int width, unsigned int height) {
         tui_deinit();
         fprintf(stderr, "Error. The width or height specified: \"%u, %u\" are greater than the terminal dimensions: \"%u, %u\".\n",
             width, height, mcols, mrows);
-        return 1;
+        return -1;
     }
     tui.last_event = TUI_NO_EVENT;
     tui.width = width;

@@ -12,14 +12,16 @@ int main(const int argc, const char** argv) {
     // Set random seed.
     srand(time(0));
     const unsigned int max_fps = 30;
+
     SMConfig conf = {
+        .n_threads = 4,
         .width = 180, .height = 46,
         .init_percent_x = 0.4, .init_percent_y = 0.4,
-        .ri = -1.0f, .ra = 8.0f, 
+        .ri = -1.0f, .ra = 7.0f, 
         .b1 = .278f, .d1 = .267f, 
         .b2 = .365f, .d2 = .445f,
         .alpha_m = .147f, .alpha_n = .028f,
-        .dt = .008f
+        .dt = .05f
     };
 
     SMState* s = sm_init(&conf);
