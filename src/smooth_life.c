@@ -2,12 +2,14 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <math.h>
 
-#include <stdio.h>
+#include <stdio.h>      // temp
 
 #include "thread_pool.h"
+
+
+typedef void (*StateStepFn)(SMState*);
 
 typedef struct {
     size_t i_min, i_max;
@@ -15,6 +17,7 @@ typedef struct {
 } SMTask;
 
 struct SMState {
+    StateStepFn state_step_fn;
     size_t n_threads;
     unsigned int width, height;
     float ra, ri;
@@ -26,6 +29,11 @@ struct SMState {
     SMTask* tasks;
     ThreadPool* tp;
 };
+
+// State step functions
+static void state_step_nothreads(SMState* s);
+static void state_step_tp(SMState* s);
+
 
 
 static float rand_float(void) {
@@ -86,70 +94,15 @@ static void calculate_nm(SMState* s, float* n_res, float* m_res, unsigned int ci
 }
 
 
-SMState* sm_init(SMConfig* conf) {
-    SMState* s = malloc(sizeof(SMState));
-    if (!s) return NULL;
-    s->n_threads = conf->n_threads > 0 ? conf->n_threads : (size_t)(sysconf(_SC_NPROCESSORS_ONLN) - 1);
-    s->width     = conf->width;
-    s->height    = conf->height;
-    s->ra        = conf->ra;
-    s->ri        = conf->ri < 0.0f ? conf->ra / 3.0f : conf->ri;
-    s->b1        = conf->b1;
-    s->d1        = conf->d1;
-    s->b2        = conf->b2;
-    s->d2        = conf->d2;
-    s->alpha_m   = conf->alpha_m;
-    s->alpha_n   = conf->alpha_n;
-    s->dt        = conf->dt;
-
-    s->state = calloc(conf->width * conf->height, sizeof(float));
-    if (!s->state) {
-        free(s);
-        return NULL;
-    }
-    s->state_out = calloc(conf->width * conf->height, sizeof(float));
-    if (!s->state_out) {
-        free(s->state);
-        free(s);
-        return NULL;
-    }
-    s->is_state_swapped = false;
-
-    unsigned int w = conf->width * conf->init_percent_x;
-    unsigned int h = conf->height * conf->init_percent_y;
-    for (size_t di = 0; di < h; di++) {
-        for (size_t dj = 0; dj < w; dj++) {
-            unsigned int j = dj + conf->width / 2 - w / 2;
-            unsigned int i = di + conf->height / 2 - h / 2;
-            s->state[j + conf->width*i] = rand_float();
+static void state_step_nothreads(SMState* s) {
+    float n, m;
+    for (size_t ci = 0; ci < s->height; ci++) {
+        for (size_t cj = 0; cj < s->width; cj++) {
+            calculate_nm(s, &n, &m, ci, cj);
+            float dstate = 2 * transition_fn(s, n, m) - 1;
+            s->state[cj + s->width*ci] += s->dt * dstate;
+            clamp(&s->state[cj + s->width*ci], 0.0f, 1.0f);
         }
-    }
-
-    if (!(s->tp = tp_init(
-        s->n_threads,
-        s->n_threads + 5
-    ))) 
-    {
-        sm_deinit(s);
-        return NULL;
-    }
-    
-    s->tasks = malloc(s->n_threads * sizeof(SMTask));
-    if (!s->tasks) {
-        sm_deinit(s);
-        return NULL;
-    }
-
-    return s;
-}
-
-void sm_deinit(SMState* s) {
-    if (s) {
-        if (s->state) free(s->state);
-        if (s->state_out) free(s->state_out);
-        tp_deinit(s->tp);
-        if (s->tasks) free(s->tasks);
-        free(s);
     }
 }
 
@@ -179,37 +132,110 @@ static void state_step_task(void* args) {
     }
 }
 
-void state_step_nothreads(SMState* s) {
-    float n, m;
-    for (size_t ci = 0; ci < s->height; ci++) {
-        for (size_t cj = 0; cj < s->width; cj++) {
-            calculate_nm(s, &n, &m, ci, cj);
-            float dstate = 2 * transition_fn(s, n, m) - 1;
-            s->state[cj + s->width*ci] += s->dt * dstate;
-            clamp(&s->state[cj + s->width*ci], 0.0f, 1.0f);
-        }
-    }
-    exit(0);
-}
-
-void state_step(SMState* s) {
-    bool add_one = false;
-    size_t elems_per_thread = (s->width * s->height) / s->n_threads;
-    if ((s->width * s->height) % s->n_threads)
-        add_one = true;
-
-    for (size_t i = 0; i < s->n_threads; i++) {
-        size_t index_min = i * elems_per_thread;
-        s->tasks[i].state = s;
-        s->tasks[i].i_min = index_min;
-        s->tasks[i].i_max = index_min + elems_per_thread - 1;
-        
+static void state_step_tp(SMState* s) {
+    for (size_t i = 0; i < s->n_threads; i++)
         tp_add_task(s->tp, state_step_task, (void*)&s->tasks[i]);
-    }
 
     tp_wait(s->tp);
 
     state_swap(s);
+}
+
+
+SMState* sm_init(SMConfig* conf) {
+    SMState* s = malloc(sizeof(SMState));
+    if (!s) return NULL;
+    s->width     = conf->width;
+    s->height    = conf->height;
+    s->ra        = conf->ra;
+    s->ri        = conf->ri < 0.0f ? conf->ra / 3.0f : conf->ri;
+    s->b1        = conf->b1;
+    s->d1        = conf->d1;
+    s->b2        = conf->b2;
+    s->d2        = conf->d2;
+    s->alpha_m   = conf->alpha_m;
+    s->alpha_n   = conf->alpha_n;
+    s->dt        = conf->dt;
+
+    s->state = calloc(conf->width * conf->height, sizeof(float));
+    if (!s->state) {
+        free(s);
+        return NULL;
+    }
+    s->is_state_swapped = false;
+
+    unsigned int w = conf->width * conf->init_percent_x;
+    unsigned int h = conf->height * conf->init_percent_y;
+    for (size_t di = 0; di < h; di++) {
+        for (size_t dj = 0; dj < w; dj++) {
+            unsigned int j = dj + conf->width / 2 - w / 2;
+            unsigned int i = di + conf->height / 2 - h / 2;
+            s->state[j + conf->width*i] = rand_float();
+        }
+    }
+
+    // Policy config
+    switch (conf->ex_policy) {
+    case SM_SINGLETHREADED:
+        s->state_step_fn = state_step_nothreads;
+        s->n_threads = 1;
+        break;
+    
+    case SM_THREAD_POOL:
+        s->state_step_fn = state_step_tp;
+
+        s->n_threads = conf->n_threads != 0 ? conf->n_threads : SM_DEFAULT_N_THREADS;
+        s->state_out = calloc(conf->width * conf->height, sizeof(float));
+        if (!s->state_out) {
+            sm_deinit(s);
+            return NULL;
+        }
+
+        if (!(s->tp = tp_init(
+            s->n_threads,
+            s->n_threads + 5
+        ))) 
+        {
+            sm_deinit(s);
+            return NULL;
+        }
+    
+        s->tasks = malloc(s->n_threads * sizeof(SMTask));
+        if (!s->tasks) {
+            sm_deinit(s);
+            return NULL;
+        }
+        // Init tasks
+        bool add_one = false;
+        size_t elems_per_thread = (s->width * s->height) / s->n_threads;
+        if ((s->width * s->height) % s->n_threads)
+            add_one = true;
+
+        for (size_t i = 0; i < s->n_threads; i++) {
+            size_t index_min = i * elems_per_thread;
+            s->tasks[i].state = s;
+            s->tasks[i].i_min = index_min;
+            s->tasks[i].i_max = index_min + elems_per_thread - 1;
+        }
+
+        break;
+    }
+
+    return s;
+}
+
+void sm_deinit(SMState* s) {
+    if (s) {
+        if (s->state) free(s->state);
+        if (s->state_out) free(s->state_out);
+        if (s->tp) tp_deinit(s->tp);
+        if (s->tasks) free(s->tasks);
+        free(s);
+    }
+}
+
+void state_step(SMState* s) {
+    s->state_step_fn(s);
 }
 
 float* sm_get_raw_state(SMState* s) {

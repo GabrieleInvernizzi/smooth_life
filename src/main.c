@@ -14,7 +14,8 @@ int main(const int argc, const char** argv) {
     const unsigned int max_fps = 30;
 
     SMConfig conf = {
-        .n_threads = 4,
+        .ex_policy = SM_THREAD_POOL,
+        .n_threads = 0,
         .width = 180, .height = 46,
         .init_percent_x = 0.4, .init_percent_y = 0.4,
         .ri = -1.0f, .ra = 7.0f, 
