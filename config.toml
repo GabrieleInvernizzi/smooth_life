@@ -1,0 +1,15 @@
+execution_policy = "OMP"
+n_threads = 0
+width = 173
+height = 41
+init_percent_x = 0.4
+init_percent_y = 0.4
+ri = -1.0
+ra = 7.0
+b1 = 0.278
+d1 = 0.267
+b2 = 0.365
+d2 = 0.445
+alpha_m = 0.147
+alpha_n = 0.028
+dt = 0.02

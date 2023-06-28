@@ -6,8 +6,6 @@
 
 #include <omp.h>
 
-#include <stdio.h>      // temp
-
 #include "thread_pool.h"
 
 
