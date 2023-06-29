@@ -32,7 +32,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDE_DIR) -c -o $@ $<
 
 $(OBJ_DIR)/toml.o: external/tomlc99/toml.c
-	$(CC) -Wall -Wextra -std=c99 -Iexternal/tomlc99 -c -o $@ $<
+	$(CC) -Wall -Wextra -O3 -std=c99 -Iexternal/tomlc99 -c -o $@ $<
 
 
 .PHONY: makedir
