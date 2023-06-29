@@ -34,7 +34,7 @@ static int parse_conf(Config* config, const char* filepath) {
 
     f = fopen(filepath, "r");
     if (!f) {
-        fprintf(stderr, "Cannot open the file: '%s'\n", filepath);      // TODO: better errors
+        fprintf(stderr, "Cannot open the file: '%s'\n", filepath);
         return -1;
     }
 
@@ -182,7 +182,7 @@ int gen_config(Config* conf, int argc, const char** argv) {
         return 0;
 
     if (argc > 2) {
-        fprintf(stderr, "Too many arguments.\n");
+        fprintf(stderr, "Too many arguments. Expected: 'smooth_life <optional: config filepath>'.\n");
         return -1;
     }
 
