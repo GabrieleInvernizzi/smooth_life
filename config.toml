@@ -1,3 +1,7 @@
+[rendering]
+max_fps = 30
+
+[simulation]
 execution_policy = "OMP"
 width = 173
 height = 41
