@@ -3,8 +3,6 @@ max_fps = 30
 
 [simulation]
 execution_policy = "OMP"
-width = 173
-height = 41
 init_percent_x = 0.4
 init_percent_y = 0.4
 ra = 7.0

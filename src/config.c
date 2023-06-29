@@ -21,19 +21,27 @@ static inline char* str_to_lower(char* s) {
 
 #define PARSE_CONF_CHECK(dataval, val_str) \
     if (!dataval.ok) {\
-        fprintf(stderr, "Error parsing '" val_str "'.\n");\
+        fprintf(stderr, "Error parsing '" val_str "' in file: '%s'.\n", filepath);\
         toml_free((toml_table_t*)table);\
         return -1;\
     }
 
-static int parse_conf(Config* config, FILE* f) {
+static int parse_conf(Config* config, const char* filepath) {
     toml_datum_t current_val;
     char errbuf[PARSE_CONF_ERRBUF_SIZE];
+    FILE* f = NULL;
     SMConfig* conf = &config->sm_conf;
 
+    f = fopen(filepath, "r");
+    if (!f) {
+        fprintf(stderr, "Cannot open the file: '%s'\n", filepath);      // TODO: better errors
+        return -1;
+    }
+
     const toml_table_t* table = toml_parse_file(f, errbuf, sizeof(errbuf));
-    if (!conf) {
-        fprintf(stderr, "Error. Can't parse the file - %s\n", errbuf);
+    fclose(f);
+    if (!table) {
+        fprintf(stderr, "Error. Can't parse the file '%s' - %s.\n", filepath, errbuf);
         return -1;
     }
 
@@ -64,9 +72,9 @@ static int parse_conf(Config* config, FILE* f) {
         else if (strcmp(current_val.u.s, "omp") == 0 || strcmp(current_val.u.s, "openmp") == 0)
             conf->ex_policy = SM_OMP;
         else {
-            fprintf(stderr, "No execution policies named: '%s'", current_val.u.s);
-            toml_free((toml_table_t*)table);
+            fprintf(stderr, "No execution policies named: '%s' in file: '%s'.\n", current_val.u.s, filepath);
             free(current_val.u.s);
+            toml_free((toml_table_t*)table);
             return -1;
         }
         free(current_val.u.s);
@@ -152,8 +160,6 @@ static int parse_conf(Config* config, FILE* f) {
 #undef PARSE_CONF_CHECK
 
 int gen_config(Config* conf, int argc, const char** argv) {
-    FILE* file = NULL;
-    
     // Init conf to defualt
     conf->max_fps = DEFAULT_MAX_FPS;
     conf->sm_conf.ex_policy = DEFAULT_SM_EX_POLICY;
@@ -180,16 +186,5 @@ int gen_config(Config* conf, int argc, const char** argv) {
         return -1;
     }
 
-    file = fopen(argv[1], "r");
-    if (!file) {
-        fprintf(stderr, "Cannot open the file: '%s'\n", argv[1]);      // TODO: better errors
-        return -1;
-    }
-    int parse_res = parse_conf(conf, file);
-    fclose(file);
-    if (parse_res == -1)
-        return -1;
-
-
-    return 0;
+    return parse_conf(conf, argv[1]);
 }
