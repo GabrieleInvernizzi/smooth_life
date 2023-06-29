@@ -13,7 +13,6 @@
 #define CLOCK_IN_SECS() ((double)clock() / (double)CLOCKS_PER_SEC)
 
 
-
 const char* SM_EX_POLICY_STR[] = {
     "Singlethreaded",
     "Thread Pool",

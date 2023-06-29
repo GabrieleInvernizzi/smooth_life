@@ -10,10 +10,10 @@ typedef enum {
     SM_SINGLETHREADED,
     SM_THREAD_POOL,
     SM_OMP
-} SMConfigExecutionPolicy;
+} SMExecutionPolicy;
 
 typedef struct {
-    SMConfigExecutionPolicy ex_policy;
+    SMExecutionPolicy ex_policy;
     size_t n_threads;                       // If n_threads == 0 it is assumed to be SM_DEFAULT_N_THREADS.
     unsigned int width, height;
     float init_percent_x, init_percent_y;
