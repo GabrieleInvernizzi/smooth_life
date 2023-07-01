@@ -95,6 +95,14 @@ static void calculate_nm(SMState* s, float* n_res, float* m_res, unsigned int ci
 }
 
 
+static inline void state_swap(SMState* s) {
+    float* tmp_state = s->state;
+    s->state = s->state_out;
+    s->state_out = tmp_state;
+    s->is_state_swapped ^= 1;
+}
+
+
 static void state_step_nothreads(SMState* s) {
     float n, m;
     for (size_t ci = 0; ci < s->height; ci++) {
@@ -102,19 +110,14 @@ static void state_step_nothreads(SMState* s) {
             size_t index = cj + s->width*ci;
             calculate_nm(s, &n, &m, ci, cj);
             float dstate = 2 * transition_fn(s, n, m) - 1;
-            s->state[index] += s->dt * dstate;
-            clamp(&s->state[index], 0.0f, 1.0f);
+            s->state_out[index] = s->state[index] + s->dt * dstate;
+            clamp(&s->state_out[index], 0.0f, 1.0f);
         }
     }
+
+    state_swap(s);
 }
 
-
-static inline void state_swap(SMState* s) {
-    float* tmp_state = s->state;
-    s->state = s->state_out;
-    s->state_out = tmp_state;
-    s->is_state_swapped ^= 1;
-}
 
 static void state_step_task(void* args) {
     SMTask* task = args;
@@ -200,6 +203,12 @@ SMState* sm_init(SMConfig* conf) {
         }
     }
 
+    s->state_out = calloc(conf->width * conf->height, sizeof(float));
+    if (!s->state_out) {
+        sm_deinit(s);
+        return NULL;
+    }
+
     // Policy config
     switch (conf->ex_policy) {
     case SM_SINGLETHREADED:
@@ -212,22 +221,11 @@ SMState* sm_init(SMConfig* conf) {
         s->n_threads = conf->n_threads != 0 ? conf->n_threads : SM_DEFAULT_N_THREADS;
         omp_set_num_threads(s->n_threads);
 
-        s->state_out = calloc(conf->width * conf->height, sizeof(float));
-        if (!s->state_out) {
-            sm_deinit(s);
-            return NULL;
-        }
         break;
     
     case SM_THREAD_POOL:
         s->state_step_fn = state_step_tp;
-
         s->n_threads = conf->n_threads != 0 ? conf->n_threads : SM_DEFAULT_N_THREADS;
-        s->state_out = calloc(conf->width * conf->height, sizeof(float));
-        if (!s->state_out) {
-            sm_deinit(s);
-            return NULL;
-        }
 
         if (!(s->tp = tp_init(
             s->n_threads,
