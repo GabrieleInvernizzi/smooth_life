@@ -28,7 +28,11 @@ int main(const int argc, const char** argv) {
     if (gen_config(&conf, argc, argv) == -1)
         return -1;
 
-    if (tui_init(&conf.sm_conf.width, &conf.sm_conf.height))
+    // Setup tui info struct
+    TUITitleInfo tui_title_info;
+    tui_title_info.ex_policy = SM_EX_POLICY_STR[conf.sm_conf.ex_policy];
+
+    if (tui_init(&conf.sm_conf.width, &conf.sm_conf.height, &tui_title_info))
         return 1;
 
     SMState* s = sm_init(&conf.sm_conf);
@@ -37,9 +41,6 @@ int main(const int argc, const char** argv) {
         return 1;
     }
 
-    // Setup tui info struct
-    TUIInfo tui_info;
-    tui_info.ex_policy = SM_EX_POLICY_STR[conf.sm_conf.ex_policy];
 
     // Setup timers
     double current_time = CLOCK_IN_SECS();
@@ -60,7 +61,7 @@ int main(const int argc, const char** argv) {
             current_time = CLOCK_IN_SECS();
 
             state_step(s);
-            tui_render(sm_get_raw_state(s), &tui_info);
+            tui_render(sm_get_raw_state(s));
         }
     }
 

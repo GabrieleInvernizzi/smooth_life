@@ -10,15 +10,15 @@ typedef enum {
 
 typedef struct {
     const char* ex_policy;
-} TUIInfo;
+} TUITitleInfo;
 
 
 // Width and height of each frame.
-int tui_init(unsigned int* width, unsigned int* height);
+int tui_init(unsigned int* width, unsigned int* height, TUITitleInfo* title_info);
 // Deinit trenderer.
 void tui_deinit(void);
 // Renders a frame onto the terminal.
 // The frame must have the dimensions specified in trenderer_init and the valuse must be between 0.0 and 1.0.
-void tui_render(float* frame, TUIInfo* info);
+void tui_render(float* frame);
 // Get the last event.
 TUIEvent tui_get_event(void);

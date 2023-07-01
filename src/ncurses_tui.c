@@ -9,7 +9,6 @@ static const unsigned char N_LEVELS = sizeof(LEVELS) / sizeof(char) - 1;
 typedef struct {
     unsigned int width, height;
     unsigned int x, y;
-    unsigned int info_x;
     TUIEvent last_event;
 } TUI;
 
@@ -18,7 +17,7 @@ static TUI tui = { 0 };
 #define TUI_MIN_ROWS (12)
 #define TUI_MIN_COLS (42)
 
-int tui_init(unsigned int* width_out, unsigned int* height_out) {
+int tui_init(unsigned int* width_out, unsigned int* height_out, TUITitleInfo* title_info) {
     unsigned int mrows, mcols;
     unsigned int width, height;
 
@@ -45,7 +44,6 @@ int tui_init(unsigned int* width_out, unsigned int* height_out) {
 
     tui.x = (mcols - width) / 2;
     tui.y = (mrows - height) / 2;
-    tui.info_x = 5;
 
     unsigned int x = tui.x - 1;
     unsigned int y = tui.y - 1;
@@ -65,16 +63,22 @@ int tui_init(unsigned int* width_out, unsigned int* height_out) {
     mvaddch(y, x + width, '+');
     mvaddch(y + height, x + width, '+');
 
+    // Make
+    const unsigned int title_x = 5;
+    mvprintw(tui.y - 1, title_x, "[ Smooth Life - %s ]",
+        title_info->ex_policy);
+
     return 0;
 }
 
 
 void tui_deinit(void) {
+    curs_set(1);
     endwin();
 }
 
 
-void tui_render(float* frame, TUIInfo* info) {
+void tui_render(float* frame) {
     // Check keyboard
     int input = getch();
     switch (input) {
@@ -82,9 +86,6 @@ void tui_render(float* frame, TUIInfo* info) {
         case 'q': tui.last_event = TUI_QUIT_EVENT; break;
         default: break;
     }
-    // Render info
-    mvprintw(tui.y - 1, tui.info_x, "[ Smooth Life - %s ]",
-        info->ex_policy);
     // Render frame
     for (size_t i = tui.y; i < tui.height + tui.y - 1; i++) {
         for (size_t j = tui.x; j < tui.width + tui.x - 1; j++) {
