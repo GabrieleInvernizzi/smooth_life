@@ -3,9 +3,11 @@ max_fps = 30
 
 [simulation]
 execution_policy = "OMP"
+n_threads = 4
 init_percent_x = 0.4
 init_percent_y = 0.4
 ra = 7.0
+ri = 2.333                  # If ri is not present but ra is ri = ra / 3.
 b1 = 0.278
 d1 = 0.267
 b2 = 0.365
