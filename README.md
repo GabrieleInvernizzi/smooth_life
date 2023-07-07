@@ -1,5 +1,5 @@
 # smooth_life
-smooth_life is cli implementation of a generalized version of Conway's "Game of Life" explained in a paper authored by [Stephan Rafler](https://arxiv.org/pdf/1111.1567.pdf).
+smooth_life is a cli implementation of a generalized version of Conway's "Game of Life" explained in a paper authored by [Stephan Rafler](https://arxiv.org/pdf/1111.1567.pdf).
 
 ## Gallery
 ![smooth_life first image](images/smooth_life_1.png)
