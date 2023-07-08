@@ -14,6 +14,14 @@ The project utilizes `Make` as the designated build system, `gcc 9.4` for compil
 - `OpenMP`  (bundled with gcc)
 - [`tomlc99`](https://github.com/cktan/tomlc99) (included as a git submodule)
 
+### Using Docker
+An alternative to installing all the dependencies is to use [Docker](https://www.docker.com) and create an image using the [`Dockerfile`](Dokerfile) provided.
+
+Then you can run smooth_life with the following command:
+```bash
+docker run -it <name_of_your_image> <optinal: your_config_file>
+```
+
 ## Usage
 
 To compile the project, simply run `make` or, for a debug build, `make debug=true`.
