@@ -15,7 +15,7 @@ The project utilizes `Make` as the designated build system, `gcc 9.4` for compil
 - [`tomlc99`](https://github.com/cktan/tomlc99) (included as a git submodule)
 
 ### Using Docker
-An alternative to installing all the dependencies is to use [Docker](https://www.docker.com) and create an image using the [`Dockerfile`](Dokerfile) provided.
+An alternative to installing all the dependencies is to use [Docker](https://www.docker.com) and create an image using the [`Dockerfile`](./Dockerfile) provided.
 
 Then you can run smooth_life with the following command:
 ```bash
