@@ -28,7 +28,7 @@ struct ThreadPool {
 };
 
 
-// task queue
+// Task queue
 static int tp_task_queue_init(TPTaskQueue* tq, size_t cap) {
     tq->capacity = cap + 1;
     tq->buffer = malloc(tq->capacity * sizeof(TPTask));
@@ -76,7 +76,7 @@ static void* tp_worker(void *arg) {
     TPTask task;
     int removed = -1;
 
-    while (1) {
+    while (true) {
         pthread_mutex_lock(&(tp->task_mutex));
 
         while (tp_task_queue_is_empty(&tp->task_queue) && tp->running)
@@ -190,7 +190,7 @@ void tp_wait(ThreadPool* tp) {
     if (!tp) return;
 
     pthread_mutex_lock(&(tp->task_mutex));
-    while (1) {
+    while (true) {
         if ((tp->running && tp->working_count != 0) || 
             (!tp->running && tp->n_threads != 0)) {
             pthread_cond_wait(&(tp->wait_cond), &(tp->task_mutex));

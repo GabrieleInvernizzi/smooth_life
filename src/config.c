@@ -1,6 +1,5 @@
 #include "config.h"
 
-#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -34,7 +33,7 @@ static int parse_conf(Config* config, const char* filepath) {
 
     f = fopen(filepath, "r");
     if (!f) {
-        fprintf(stderr, "Cannot open the file: '%s'\n", filepath);
+        fprintf(stderr, "Cannot open the file: '%s'.\n", filepath);
         return -1;
     }
 

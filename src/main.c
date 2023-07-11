@@ -33,12 +33,12 @@ int main(const int argc, const char** argv) {
     tui_title_info.ex_policy = SM_EX_POLICY_STR[conf.sm_conf.ex_policy];
 
     if (tui_init(&conf.sm_conf.width, &conf.sm_conf.height, &tui_title_info))
-        return 1;
+        return -1;
 
     SMState* s = sm_init(&conf.sm_conf);
     if (!s) {
         tui_deinit();
-        return 1;
+        return -1;
     }
 
 
